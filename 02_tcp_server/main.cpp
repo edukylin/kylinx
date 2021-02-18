@@ -14,7 +14,9 @@
 enum CMD
 {
     CMD_LOGIN,
+    CMD_LOGIN_RESULT,
     CMD_LOGOUT,
+    CMD_LOGOUT_RESULT,
     CMD_ERROR
 };
 
@@ -26,28 +28,58 @@ struct DataHeader
 };
 
 // login data package;
-struct Login
+struct Login : public DataHeader
 {
+public:
     char userName[32];
     char passWord[32];
+public:
+    Login()
+    {
+        command = CMD_LOGIN;
+        length = sizeof(Login);
+    }
 };
 
 // login result data package;
-struct LoginResult
+struct LoginResult : public DataHeader
 {
+public:
     int result;
+public:
+    LoginResult()
+    {
+        command = CMD_LOGIN_RESULT;
+        length = sizeof(LoginResult);
+        result = 0; // correct;
+    }
 };
 
 // logout data package;
-struct Logout
+struct Logout : public DataHeader
 {
+public:
     char userName[32];
+public:
+    Logout()
+    {
+        command = CMD_LOGOUT;
+        length = sizeof(Logout);
+    }
 };
 
 // logout result data package;
-struct LogoutResult
+struct LogoutResult : public DataHeader
 {
+public:
     int  result;
+public:
+    LogoutResult()
+    {
+        command = CMD_LOGOUT_RESULT;
+        length = sizeof(LogoutResult);
+        result = 0; // correct;
+    }
 };
 
 int main(int argc, char* argv[])
@@ -106,103 +138,76 @@ int main(int argc, char* argv[])
         printf("socket accept %s successful.\n", inet_ntoa(clientAddress.sin_addr));
     }
 
-
     while (true)
     {
+        // 5. receive header;
         DataHeader header = { 0 };
-
-        // 5. receive data header;
         int recvCount = recv(clientSocket, (char*)&header, sizeof(DataHeader), 0);
         if (recvCount <= 0)
         {
             (SOCKET_ERROR == recvCount) ? printf("failed: recv header error.\n") : printf("failed: recv header close.\n");
             break;
         }
-        printf("socket recv header: %d <cmd>, %d <length>.\n", header.command, header.length);
 
         switch (header.command)
         {
             case CMD_LOGIN: // login command.
             {
-                // 5. receive login data.
-                Login dataLogin = { 0 };
-                int recvCount = recv(clientSocket, (char*)&dataLogin, sizeof(Login), 0);
+                // 5. receive login.
+                Login login;
+                int recvCount = recv(clientSocket, (char*)&login+sizeof(DataHeader), sizeof(Login)-sizeof(DataHeader), 0);
                 if (recvCount <= 0)
                 {
-                    (SOCKET_ERROR == recvCount) ? printf("failed: recv login data error.\n") : printf("failed: recv login data close.\n");
+                    (SOCKET_ERROR == recvCount) ? printf("failed: recv login error.\n") : printf("failed: recv login close.\n");
                     break;
                 }
-                printf("socket recv login data: %s <username>, %s <password>.\n", dataLogin.userName, dataLogin.passWord);
-                // 6. send login result header.
-                DataHeader headerLoginResult = { CMD_LOGIN, sizeof(LoginResult) };
-                if (SOCKET_ERROR == send(clientSocket, (const char*)&headerLoginResult, sizeof(DataHeader), 0))
+                printf("socket recv login data: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", login.length, login.userName, login.passWord);
+                // 6. send login result.
+                LoginResult loginResult;
+                if (SOCKET_ERROR == send(clientSocket, (const char*)&loginResult, sizeof(loginResult), 0))
                 {
-                    printf("failed: send login result header error.\n");
-                    break;
+                    printf("failed: send login result error.\n");
                 }
                 else
                 {
-                    printf("socket send login result header: %d <cmd>, %d <length>.\n", headerLoginResult.command, headerLoginResult.length);
-                    // 6. send login result data.
-                    LoginResult dataLoginResult = { 1 };
-                    if (SOCKET_ERROR == send(clientSocket, (const char*)&dataLoginResult, sizeof(LoginResult), 0))
-                    {
-                        printf("failed: send login result data error.\n");
-                        break;
-                    }
-                    else
-                    {
-                        printf("socket send login result data: %d <result>.\n", dataLoginResult.result);
-                    }
+                    printf("socket send login result: CMD_LOGIN_RESULT <cmd>, %d <bytes>, %d <result>.\n", loginResult.length, loginResult.result);
                 }
                 break;
             }
             case CMD_LOGOUT: // logout command.
             {
-                // receive logout header.
-                Logout dataLogout = { 0 };
-                int recvCount = recv(clientSocket, (char*)&dataLogout, sizeof(Logout), 0);
+                // 5. receive logout.
+                Logout logout;
+                int recvCount = recv(clientSocket, (char*)&logout+ sizeof(DataHeader), sizeof(Logout)-sizeof(DataHeader), 0);
                 if (recvCount <= 0)
                 {
-                    (SOCKET_ERROR == recvCount) ? printf("failed: recv logout data error.\n") : printf("failed: recv logout data close.\n");
+                    (SOCKET_ERROR == recvCount) ? printf("failed: recv logout error.\n") : printf("failed: recv logout close.\n");
                     break;
                 }
-                printf("socket recv logout data: %s <username>.\n", dataLogout.userName);
-                // send logout result header.
-                DataHeader headerLogoutResult = { CMD_LOGOUT, sizeof(LogoutResult) };
-                if (SOCKET_ERROR == send(clientSocket, (const char*)&headerLogoutResult, sizeof(DataHeader), 0))
+                printf("socket recv login data: CMD_LOGOUT <cmd>, %d <bytes>, %s <username>.\n", logout.length, logout.userName);
+                // 6. send logout result.
+                LogoutResult logoutResult;
+                if (SOCKET_ERROR == send(clientSocket, (const char*)&logoutResult, sizeof(LogoutResult), 0))
                 {
                     printf("failed: send logout result header error.\n");
-                    break;
                 }
                 else
                 {
-                    printf("socket send logout result header: %d <cmd>, %d <length>.\n", headerLogoutResult.command, headerLogoutResult.length);
-                    // send logout result data.
-                    LogoutResult dataLogoutResult = { 1 };
-                    if (SOCKET_ERROR == send(clientSocket, (const char*)&dataLogoutResult, sizeof(LogoutResult), 0))
-                    {
-                        printf("failed: send logout result data error.\n");
-                        break;
-                    }
-                    else
-                    {
-                        printf("socket send logout result data: %d <result>.\n", dataLogoutResult.result);
-                    }
+                    printf("socket send logout result: CMD_LOGOUT_RESULT <cmd>, %d <bytes>, %d <result>.\n", logoutResult.length, logoutResult.result);
                 }
                 break;
             }
             default: // unknown header.
             {
-                DataHeader headerErrorResult = { 0, CMD_ERROR };
-                printf("socket recv unknown header: %d cmd, %d length.\n", header.command, header.length);
-                if (SOCKET_ERROR == send(clientSocket, (const char*)&headerErrorResult, sizeof(DataHeader), 0))
+                printf("socket recv unknown header: %d <cmd>, %d <bytes>.\n", header.command, header.length);
+                DataHeader errorResult = { CMD_ERROR, 0 };
+                if (SOCKET_ERROR == send(clientSocket, (const char*)&errorResult, sizeof(DataHeader), 0))
                 {
-                    printf("failed: send unknown result header error.\n");
+                    printf("failed: send unknown result error.\n");
                 }
                 else
                 {
-                    printf("socket send unknown result header: %d <cmd>, %d <length>.\n", headerErrorResult.command, headerErrorResult.length);
+                    printf("socket send unknown result : CMD_ERROR <cmd>, %d <bytes>.\n", errorResult.length);
                 }
                 break;
             }     
