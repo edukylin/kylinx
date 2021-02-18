@@ -9,4 +9,4 @@
 
 - vers1. Realize interaction between server and client.
 - vers2. Structured transport message.
-
+- vers3. Encapsulate message in data package.
