@@ -1,3 +1,8 @@
+# Kylinx Project Config
+/bin
+/tmp
+.vs/
+
 # Prerequisites
 *.d
 
