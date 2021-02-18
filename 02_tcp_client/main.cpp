@@ -11,6 +11,12 @@
 // Properties >> Linker >> Input >> Additional_Dependencies
 #pragma comment(lib, "ws2_32.lib")
 
+struct DataPackage
+{
+    char name[32];
+    int  age;
+};
+
 int main(int argc, char* argv[])
 {
     // Initiates use of the Winsock DLL by a process;
@@ -78,7 +84,8 @@ int main(int argc, char* argv[])
             (SOCKET_ERROR == recvCount) ? printf("failed: recv error.\n") : printf("socket client close.\n");
             break;
         }
-        printf("socket recv message: %s\n", recvBuffer);
+        struct DataPackage* pDataPackage = (struct DataPackage*)recvBuffer;
+        printf("socket recv message: name<%s>, age<%d>.\n", pDataPackage->name, pDataPackage->age);
     }
 
     // 4. close a socket descriptor;

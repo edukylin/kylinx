@@ -6,3 +6,7 @@
 ###### 01_tcp_server & 01_tcp_client: Learn socket programming model.
 
 ###### 02_tcp_server & 02_tcp_client:  Realize interaction between server and client.
+
+- vers1. Realize interaction between server and client.
+- vers2. Structured transport message.
+

@@ -9,18 +9,24 @@
 
 // Properties >> Linker >> Input >> Additional_Dependencies
 #pragma comment(lib, "ws2_32.lib")
-    
+
+struct DataPackage
+{
+    char name[32];
+    int  age;
+};
+
 int main(int argc, char* argv[])
 {
     // Initiates use of the Winsock DLL by a process;
     WORD    vers = MAKEWORD(2, 2);
     WSADATA data = { 0 };
     WSAStartup(vers, &data);
-    
+
     // ********** Begin socket programming. ********** //
-    
+
     // 1. create a socket for communication;
-    SOCKET listenSocket = INVALID_SOCKET;   
+    SOCKET listenSocket = INVALID_SOCKET;
     listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (INVALID_SOCKET == listenSocket)
     {
@@ -69,7 +75,7 @@ int main(int argc, char* argv[])
     }
 
     char recvBuffer[128] = { 0 };
-    char sendBuffer[128] = {0};
+    char sendBuffer[128] = { 0 };
     while (true)
     {
         memset(recvBuffer, 0, sizeof(recvBuffer));
@@ -83,28 +89,33 @@ int main(int argc, char* argv[])
             break;
         }
 
-        if (0 == strcmp(recvBuffer, "getName"))
+        if (0 == strcmp(recvBuffer, "getInfo"))
         {
-            strcpy(sendBuffer, "Steven Paul Jobs.");
-        }
-        else if (0 == strcmp(recvBuffer, "getAge"))
-        {
-            strcpy(sendBuffer, "56.");
+            // 6. send a message on a socket;
+            struct DataPackage dataPackage = { "Steven Paul Jobs.", 56 };
+            if (SOCKET_ERROR == send(clientSocket, (const char*)&dataPackage, sizeof(dataPackage), 0))
+            {
+                printf("failed: send error.\n");
+            }
+            else
+            {
+                printf("socket recv message: %s\n", recvBuffer);
+                printf("socket send message: name<%s>, age<%d>.\n", dataPackage.name, dataPackage.age);
+            }
         }
         else
         {
+            // 6. send a message on a socket;
             strcpy(sendBuffer, "I don't understand.");
-        }
-
-        // 6. send a message on a socket;
-        if (SOCKET_ERROR == send(clientSocket, sendBuffer, strlen(sendBuffer) + 1, 0))
-        {
-            printf("failed: send error.\n");
-        }
-        else
-        {
-            printf("socket recv message: %s\n", recvBuffer);
-            printf("socket send message: %s\n", sendBuffer);
+            if (SOCKET_ERROR == send(clientSocket, sendBuffer, strlen(sendBuffer) + 1, 0))
+            {
+                printf("failed: send error.\n");
+            }
+            else
+            {
+                printf("socket recv message: %s\n", recvBuffer);
+                printf("socket send message: %s\n", sendBuffer);
+            }
         }
     }
 
