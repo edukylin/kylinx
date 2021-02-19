@@ -11,3 +11,4 @@
 - vers2. Structured transport message.
 - vers3. Encapsulate message in data package.
 - vers4. Merge encapsulated data package.
+- vers5. Change receive data with receive buffer.

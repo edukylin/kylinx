@@ -141,28 +141,28 @@ int main(int argc, char* argv[])
     while (true)
     {
         // 5. receive header;
-        DataHeader header = { 0 };
-        int recvCount = recv(clientSocket, (char*)&header, sizeof(DataHeader), 0);
+        char recvBuffer[1024] = { 0 };
+        int recvCount = recv(clientSocket, (char*)&recvBuffer, sizeof(DataHeader), 0);
         if (recvCount <= 0)
         {
             (SOCKET_ERROR == recvCount) ? printf("failed: recv header error.\n") : printf("failed: recv header close.\n");
             break;
         }
 
-        switch (header.command)
+        switch (((DataHeader*)recvBuffer)->command)
         {
-            case CMD_LOGIN: // login command.
+            case CMD_LOGIN:
             {
-                // 5. receive login.
-                Login login;
-                int recvCount = recv(clientSocket, (char*)&login+sizeof(DataHeader), sizeof(Login)-sizeof(DataHeader), 0);
+                // 5. receive login;
+                Login* pLogin = (Login*)recvBuffer;
+                int recvCount = recv(clientSocket, recvBuffer+sizeof(DataHeader), pLogin->length-sizeof(DataHeader), 0);
                 if (recvCount <= 0)
                 {
                     (SOCKET_ERROR == recvCount) ? printf("failed: recv login error.\n") : printf("failed: recv login close.\n");
                     break;
                 }
-                printf("socket recv login data: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", login.length, login.userName, login.passWord);
-                // 6. send login result.
+                printf("socket recv login data: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", pLogin->length, pLogin->userName, pLogin->passWord);
+                // 6. send login result;
                 LoginResult loginResult;
                 if (SOCKET_ERROR == send(clientSocket, (const char*)&loginResult, sizeof(loginResult), 0))
                 {
@@ -174,18 +174,18 @@ int main(int argc, char* argv[])
                 }
                 break;
             }
-            case CMD_LOGOUT: // logout command.
+            case CMD_LOGOUT:
             {
-                // 5. receive logout.
-                Logout logout;
-                int recvCount = recv(clientSocket, (char*)&logout+ sizeof(DataHeader), sizeof(Logout)-sizeof(DataHeader), 0);
+                // 5. receive logout;
+                Logout* pLogout = (Logout*)recvBuffer;
+                int recvCount = recv(clientSocket, recvBuffer+sizeof(DataHeader), pLogout->length-sizeof(DataHeader), 0);
                 if (recvCount <= 0)
                 {
                     (SOCKET_ERROR == recvCount) ? printf("failed: recv logout error.\n") : printf("failed: recv logout close.\n");
                     break;
                 }
-                printf("socket recv login data: CMD_LOGOUT <cmd>, %d <bytes>, %s <username>.\n", logout.length, logout.userName);
-                // 6. send logout result.
+                printf("socket recv login data: CMD_LOGOUT <cmd>, %d <bytes>, %s <username>.\n", pLogout->length, pLogout->userName);
+                // 6. send logout result;
                 LogoutResult logoutResult;
                 if (SOCKET_ERROR == send(clientSocket, (const char*)&logoutResult, sizeof(LogoutResult), 0))
                 {
@@ -199,7 +199,8 @@ int main(int argc, char* argv[])
             }
             default: // unknown header.
             {
-                printf("socket recv unknown header: %d <cmd>, %d <bytes>.\n", header.command, header.length);
+                DataHeader* pHeader = (DataHeader*)recvBuffer;
+                printf("socket recv unknown header: %d <cmd>, %d <bytes>.\n", pHeader->command, pHeader->length);
                 DataHeader errorResult = { CMD_ERROR, 0 };
                 if (SOCKET_ERROR == send(clientSocket, (const char*)&errorResult, sizeof(DataHeader), 0))
                 {
