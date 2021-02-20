@@ -25,4 +25,6 @@
 - vers1. Use select programming model in client.
 - vers2. Add child thread to accept user input command.
 
-##### 04_tcp_client: Add cross-platform support.
+###### 04_tcp_client: Add cross-platform support.
+
+###### 04_tcp_server: Add cross-platform support.

@@ -1,8 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <thread>
-
 #ifdef _WIN32 // WIN32 header file, macro, and dll;
     #define WIN32_LEAN_AND_MEAN             // WinSock2.h
     #define _WINSOCK_DEPRECATED_NO_WARNINGS // inet_ntoa()
@@ -19,6 +14,11 @@
     #define SOCKET_ERROR    (-1)
     #define INVALID_SOCKET  (SOCKET)(~0)
 #endif
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <thread>
 
 // message command;
 enum CMD
@@ -251,9 +251,9 @@ int main(int argc, char* argv[])
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(9981);
 #ifdef _WIN32
-    serverAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+    serverAddr.sin_addr.S_un.S_addr = inet_addr("172.168.8.128");
 #else
-    serverAddr.sin_addr.s_addr = inet_addr("172.168.1.1");
+    serverAddr.sin_addr.s_addr = inet_addr("172.168.8.128");
 #endif
     if (SOCKET_ERROR == connect(serverSocket, (const sockaddr*)&serverAddr, sizeof(serverAddr)))
     {
