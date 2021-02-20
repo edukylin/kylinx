@@ -7,17 +7,21 @@
 
 ###### 02_tcp_server & 02_tcp_client:  Realize interaction between server and client.
 
-vers1. Realize interaction between server and client.
+- vers1. Realize interaction between server and client.
 
-vers2. Structured transport message.
+- vers2. Structured transport message.
 
-vers3. Encapsulate message in data package.
+- vers3. Encapsulate message in data package.
 
-vers4. Merge encapsulated data package.
+- vers4. Merge encapsulated data package.
 
-vers5. Change receive data with receive buffer.
+- vers5. Change receive data with receive buffer.
+
 
 ###### 03_tcp_server: Use select programming model in server.
 
 ###### 03_tcp_client: Use select programming model in client.
+
+- vers1. Use select programming model in client.
+- vers2. Add child thread to accept user input command.
 

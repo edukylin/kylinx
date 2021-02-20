@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <thread> // CPP11.STL
 
 // Properties >> Linker >> Input >> Additional_Dependencies
 #pragma comment(lib, "ws2_32.lib")
@@ -124,7 +125,7 @@ int processor(SOCKET serverSocket)
             printf("socket <%d> recv login result data: CMD_LOGIN_RESULT <cmd>, %d <bytes>, %d <result>.\n", serverSocket, pLoginResult->length, pLoginResult->result);
             break;
         }
-        case CMD_LOGOUT:
+        case CMD_LOGOUT_RESULT:
         {
             // 5. receive logout result;
             LogoutResult* pLogoutResult = (LogoutResult*)recvBuffer;
@@ -161,6 +162,65 @@ int processor(SOCKET serverSocket)
     return 0;
 }
 
+bool g_bRun = true;
+
+void cmdTrhead(SOCKET socket)
+{
+    char cmdBuffer[128] = { 0 };
+    while (true)
+    {
+        memset(cmdBuffer, 0, sizeof(cmdBuffer));
+        scanf("%s", cmdBuffer);
+
+        if (0 == strcmp(cmdBuffer, "exit"))
+        {
+            // exit command;
+            g_bRun = false;
+            printf("exit.\n");
+            break ;
+        }
+        else if (0 == strcmp(cmdBuffer, "login"))
+        {
+            // send login command;
+            Login login;
+            strcpy(login.userName, "Steven Paul Jobs");
+            strcpy(login.passWord, "redhat");
+            if (SOCKET_ERROR == send(socket, (const char*)&login, sizeof(Login), 0))
+            {
+                printf("failed: send login error.\n");
+                break;
+            }
+            else
+            {
+                printf("socket send login: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", login.length, login.userName, login.passWord);
+            }
+
+        }
+        else if (0 == strcmp(cmdBuffer, "logout"))
+        {
+            // send logout command;
+            Logout logout;
+            strcpy(logout.userName, "Steven Paul Jobs");
+            if (SOCKET_ERROR == send(socket, (const char*)&logout, sizeof(Logout), 0))
+            {
+                printf("failed: send logout error.\n");
+                break;
+            }
+            else
+            {
+                printf("socket send logout: CMD_LOGOUT <cmd>, %d <bytes>, %s <username>.\n", logout.length, logout.userName);
+            }
+ 
+        }
+        else
+        {
+            // unknown command;
+            printf("error: unknown command.\n");
+        }
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     // Initiates use of the Winsock DLL by a process;
@@ -193,8 +253,12 @@ int main(int argc, char* argv[])
         printf("socket connect successful.\n");
     }
 
+    // user input command thread;
+    std::thread thread(cmdTrhead, serverSocket);
+    thread.detach();
+
     // 3. berkeley socket select programming;
-    while (true)
+    while (g_bRun)
     {
         fd_set fdsRead;
         FD_ZERO(&fdsRead);
@@ -217,21 +281,8 @@ int main(int argc, char* argv[])
                 break;
             }
         }
-
         // 3.3 idle time work on other task(send message);
-        Login login;
-        strcpy(login.userName, "Steven Paul Jobs");
-        strcpy(login.passWord, "redhat");
-        if (SOCKET_ERROR == send(serverSocket, (const char*)&login, sizeof(Login), 0))
-        {
-            printf("failed: send login error.\n");
-            break;
-        }
-        else
-        {
-            printf("socket send login: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", login.length, login.userName, login.passWord);
-            Sleep(1000);
-        }
+        // printf("idle time work on other tasks.\n");
     }
 
     // 4. close a socket descriptor;
