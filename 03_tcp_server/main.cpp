@@ -18,6 +18,7 @@ enum CMD
     CMD_LOGIN_RESULT,
     CMD_LOGOUT,
     CMD_LOGOUT_RESULT,
+    CMD_NEW_USER_JOIN,
     CMD_ERROR
 };
 
@@ -83,6 +84,21 @@ public:
     }
 };
 
+// new user join data package;
+struct NewUserJoin : public DataHeader
+{
+public:
+    int  socket;
+public:
+    NewUserJoin()
+    {
+        command = CMD_NEW_USER_JOIN;
+        length = sizeof(NewUserJoin);
+        socket = 0; // correct;
+    }
+};
+
+// client socket vector;
 std::vector<SOCKET> g_clients;
 
 int processor(SOCKET clientSocket)
@@ -92,7 +108,7 @@ int processor(SOCKET clientSocket)
     int recvCount = recv(clientSocket, (char*)&recvBuffer, sizeof(DataHeader), 0);
     if (recvCount <= 0)
     {
-        (SOCKET_ERROR == recvCount) ? printf("failed: recv header error.\n") : printf("failed: recv header close.\n");
+        (SOCKET_ERROR == recvCount) ? printf("failed: socket <%d> recv header error.\n", clientSocket) : printf("failed: socket <%d> recv header close.\n", clientSocket);
         return -1;
     }
 
@@ -105,19 +121,19 @@ int processor(SOCKET clientSocket)
             int recvCount = recv(clientSocket, recvBuffer + sizeof(DataHeader), pLogin->length - sizeof(DataHeader), 0);
             if (recvCount <= 0)
             {
-                (SOCKET_ERROR == recvCount) ? printf("failed: recv login error.\n") : printf("failed: recv login close.\n");
+                (SOCKET_ERROR == recvCount) ? printf("failed: socket <%d> recv login error.\n", clientSocket) : printf("failed: socket <%d> recv login close.\n", clientSocket);
                 return -1;
             }
-            printf("socket recv login data: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", pLogin->length, pLogin->userName, pLogin->passWord);
+            printf("socket <%d> recv login data: CMD_LOGIN <cmd>, %d <bytes>, %s <username>, %s <password>.\n", clientSocket, pLogin->length, pLogin->userName, pLogin->passWord);
             // 6. send login result;
             LoginResult loginResult;
             if (SOCKET_ERROR == send(clientSocket, (const char*)&loginResult, sizeof(loginResult), 0))
             {
-                printf("failed: send login result error.\n");
+                printf("failed: socket <%d> send login result error.\n", clientSocket);
             }
             else
             {
-                printf("socket send login result: CMD_LOGIN_RESULT <cmd>, %d <bytes>, %d <result>.\n", loginResult.length, loginResult.result);
+                printf("socket <%d> send login result: CMD_LOGIN_RESULT <cmd>, %d <bytes>, %d <result>.\n", clientSocket, loginResult.length, loginResult.result);
             }
             break;
         }
@@ -128,34 +144,34 @@ int processor(SOCKET clientSocket)
             int recvCount = recv(clientSocket, recvBuffer + sizeof(DataHeader), pLogout->length - sizeof(DataHeader), 0);
             if (recvCount <= 0)
             {
-                (SOCKET_ERROR == recvCount) ? printf("failed: recv logout error.\n") : printf("failed: recv logout close.\n");
+                (SOCKET_ERROR == recvCount) ? printf("failed: socket <%d> recv logout error.\n", clientSocket) : printf("failed: socket <%d> recv logout close.\n", clientSocket);
                 return -1;
             }
-            printf("socket recv login data: CMD_LOGOUT <cmd>, %d <bytes>, %s <username>.\n", pLogout->length, pLogout->userName);
+            printf("socket <%d> recv login data: CMD_LOGOUT <cmd>, %d <bytes>, %s <username>.\n", clientSocket, pLogout->length, pLogout->userName);
             // 6. send logout result;
             LogoutResult logoutResult;
             if (SOCKET_ERROR == send(clientSocket, (const char*)&logoutResult, sizeof(LogoutResult), 0))
             {
-                printf("failed: send logout result header error.\n");
+                printf("failed: socket <%d> send logout result header error.\n", clientSocket);
             }
             else
             {
-                printf("socket send logout result: CMD_LOGOUT_RESULT <cmd>, %d <bytes>, %d <result>.\n", logoutResult.length, logoutResult.result);
+                printf("socket <%d> send logout result: CMD_LOGOUT_RESULT <cmd>, %d <bytes>, %d <result>.\n", clientSocket, logoutResult.length, logoutResult.result);
             }
             break;
         }
         default: // unknown header.
         {
             DataHeader* pHeader = (DataHeader*)recvBuffer;
-            printf("socket recv unknown header: %d <cmd>, %d <bytes>.\n", pHeader->command, pHeader->length);
+            printf("socket <%d> recv unknown header: %d <cmd>, %d <bytes>.\n", clientSocket, pHeader->command, pHeader->length);
             DataHeader errorResult = { CMD_ERROR, 0 };
             if (SOCKET_ERROR == send(clientSocket, (const char*)&errorResult, sizeof(DataHeader), 0))
             {
-                printf("failed: send unknown result error.\n");
+                printf("failed: socket <%d> send unknown result error.\n", clientSocket);
             }
             else
             {
-                printf("socket send unknown result : CMD_ERROR <cmd>, %d <bytes>.\n", errorResult.length);
+                printf("socket <%d> send unknown result : CMD_ERROR <cmd>, %d <bytes>.\n", clientSocket, errorResult.length);
             }
             break;
         }
@@ -217,7 +233,7 @@ int main(int argc, char* argv[])
         FD_ZERO(&fdsExcept);
         // init read fd set;
         FD_SET(listenSocket, &fdsRead);
-        for (int i = 0; i < g_clients.size(); i++) // size_t -> unsigned int
+        for (size_t i = 0; i < g_clients.size(); i++) // size_t -> unsigned int
         {
             FD_SET(g_clients[i], &fdsRead);
         }
@@ -235,7 +251,20 @@ int main(int argc, char* argv[])
             struct sockaddr_in clientAddress = { 0 };
             int clientAddressLength = sizeof(clientAddress);
             SOCKET clientSocket = accept(listenSocket, (struct sockaddr*)&clientAddress, &clientAddressLength);
-            printf("socket accept %s successful.\n", inet_ntoa(clientAddress.sin_addr));
+            printf("socket <%d> accept %s successful.\n", listenSocket, inet_ntoa(clientAddress.sin_addr));
+            for (auto iter = g_clients.begin(); iter != g_clients.end(); iter++)
+            {
+                NewUserJoin newUserJoin;
+                newUserJoin.socket = clientSocket;
+                if (SOCKET_ERROR == send(*iter, (const char*)&newUserJoin, newUserJoin.length, 0))
+                {
+                    printf("failed: socket <%d> send new user join message error.\n", clientSocket);
+                }
+                else
+                {
+                    printf("socket <%d> send new user join message: CMD_NEW_USER_JOIN <cmd>, %d <bytes>, %d <id>.\n", clientSocket, newUserJoin.length, newUserJoin.socket);
+                }
+            }
             g_clients.push_back(clientSocket);
         }
         // receive and send message on a client socket;

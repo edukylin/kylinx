@@ -18,3 +18,6 @@ vers4. Merge encapsulated data package.
 vers5. Change receive data with receive buffer.
 
 ###### 03_tcp_server: Use select programming model in server.
+
+###### 03_tcp_client: Use select programming model in client.
+
