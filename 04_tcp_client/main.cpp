@@ -251,9 +251,9 @@ int main(int argc, char* argv[])
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(9981);
 #ifdef _WIN32
-    serverAddr.sin_addr.S_un.S_addr = inet_addr("172.168.8.128");
+    serverAddr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
 #else
-    serverAddr.sin_addr.s_addr = inet_addr("172.168.8.128");
+    serverAddr.sin_addr.s_addr = inet_addr("140.143.224.41");
 #endif
     if (SOCKET_ERROR == connect(serverSocket, (const sockaddr*)&serverAddr, sizeof(serverAddr)))
     {

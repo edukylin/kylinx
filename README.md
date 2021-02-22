@@ -28,3 +28,5 @@
 ###### 04_tcp_client: Add cross-platform support.
 
 ###### 04_tcp_server: Add cross-platform support.
+
+###### 05_tcp_server: Encapsulate tcp client with class.
