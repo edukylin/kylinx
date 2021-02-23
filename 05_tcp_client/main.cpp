@@ -45,6 +45,7 @@ int main(int argc, const char* argv[])
     TCPClient client;
     client.init();
     client.connect("127.0.0.1", 9981);
+    // client.connect("172.168.8.128", 9981);
 
     // UI interactive thread;
     std::thread thread(cmdTrhead, &client);

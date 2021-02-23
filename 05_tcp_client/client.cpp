@@ -29,11 +29,11 @@ void TCPClient::init()
 	_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (INVALID_SOCKET == _socket)
 	{
-		printf("failed: socket <%d> create error.\n", _socket);
+		printf("failed: <%d> socket create error.\n", _socket);
 	}
 	else
 	{
-		printf("socket <%d> create successful.\n", _socket);
+		printf("<%d> socket create successful.\n", _socket);
 	}
 }
 
@@ -54,10 +54,10 @@ void TCPClient::connect(const char* ip, const unsigned short port)
 #endif
 	if (SOCKET_ERROR == ::connect(_socket, (const sockaddr*)&addr, sizeof(addr)))
 	{
-		printf("failed: socket <%d> connect error.\n", _socket);
+		printf("failed: <%d> socket connect error.\n", _socket);
 	}
 	else {
-		printf("socket <%d> connect successful.\n", _socket);
+		printf("<%d> socket connect successful.\n", _socket);
 	}
 }
 
@@ -69,7 +69,7 @@ void TCPClient::close()
 #else
 	::close(_socket);
 #endif
-	printf("socket <%d> close successful.\n", _socket);
+	printf("<%d> socket close successful.\n", _socket);
 	_socket = INVALID_SOCKET;
 }
 
@@ -117,24 +117,24 @@ void TCPClient::messageHandler()
 		case CMD_LOGIN_RESULT:
 		{
 			LoginResult* pLoginResult = (LoginResult*)_recvBuffer;
-			printf("socket <%d> recv login result data: CMD_LOGIN_RESULT <cmd>, %d <bytes>, %d <result>.\n", _socket, pLoginResult->length, pLoginResult->result);
+			printf("<%d> socket recv login result data: CMD_LOGIN_RESULT, <%d> bytes, <%d> result.\n", _socket, pLoginResult->length, pLoginResult->result);
 			break;
 		}
 		case CMD_LOGOUT_RESULT:
 		{
 			LogoutResult* pLogoutResult = (LogoutResult*)_recvBuffer;
-			printf("socket <%d> recv logout result data: CMD_LOGOUT_RESULT <cmd>, %d <bytes>, %d <result>.\n", _socket, pLogoutResult->length, pLogoutResult->result);
+			printf("<%d> socket recv logout result data: CMD_LOGOUT_RESULT, <%d> bytes, <%d> result.\n", _socket, pLogoutResult->length, pLogoutResult->result);
 			break;
 		}
 		case CMD_NEW_USER_JOIN:
 		{
 			NewUserJoin* pNewUserJoin = (NewUserJoin*)_recvBuffer;
-			printf("socket <%d> recv new user join data: CMD_NEW_USER_JOIN <cmd>, %d <bytes>, %d <id>.\n", _socket, pNewUserJoin->length, pNewUserJoin->socket);
+			printf("<%d> socket recv new user join data: CMD_NEW_USER_JOIN, <%d> bytes, <%d> id.\n", _socket, pNewUserJoin->length, pNewUserJoin->socket);
 			break;
 		}
 		default:
 		{
-			printf("socket <%d> recv unknown header: %d <cmd>, %d <bytes>.\n", _socket, pHeader->command, pHeader->length);
+			printf("<%d> socket recv unknown header: <%d> cmd, <%d> bytes.\n", _socket, pHeader->command, pHeader->length);
 			break;
 		}
 	}
@@ -150,11 +150,11 @@ int TCPClient::sendData(DataHeader* pHeader)
 	int dataCount = send(_socket, (const char*)pHeader, pHeader->length, 0);
 	if (SOCKET_ERROR == dataCount)
 	{
-		printf("failed: socket <%d> send error.\n", _socket);
+		printf("failed: <%d> socket send error.\n", _socket);
 	}
 	else
 	{
-		printf("socket <%d> send data: %d <cmd>, %d <bytes>.\n", _socket, pHeader->command, pHeader->length);
+		printf("<%d> socket send data: <%d> cmd, <%d> bytes.\n", _socket, pHeader->command, pHeader->length);
 	}
 	return dataCount;
 }
@@ -167,13 +167,14 @@ int TCPClient::recvData()
 	int headerCount = recv(_socket, (char*)&_recvBuffer, sizeof(DataHeader), 0);
 	if (headerCount <= 0)
 	{
-		(SOCKET_ERROR == headerCount) ? printf("failed: socket <%d> recv header error.\n", _socket) : printf("failed: socket <%d> recv header close.\n", _socket);
+		_socket = INVALID_SOCKET;
+		(SOCKET_ERROR == headerCount) ? printf("failed: <%d> socket recv header error.\n", _socket) : printf("failed: <%d> socket recv header close.\n", _socket);
 		return SOCKET_ERROR;
 	}
 	int dataCount = recv(_socket, _recvBuffer + sizeof(DataHeader), pHeader->length - sizeof(DataHeader), 0);
 	if (dataCount <= 0)
 	{
-		(SOCKET_ERROR == dataCount) ? printf("failed: socket <%d> recv data error.\n", _socket) : printf("failed: socket <%d> recv data close.\n", _socket);
+		(SOCKET_ERROR == dataCount) ? printf("failed: <%d> socket recv data error.\n", _socket) : printf("failed: <%d> socket recv data close.\n", _socket);
 		return SOCKET_ERROR;
 	}
 	return pHeader->length;

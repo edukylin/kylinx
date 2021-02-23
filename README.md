@@ -29,4 +29,6 @@
 
 ###### 04_tcp_server: Add cross-platform support.
 
-###### 05_tcp_server: Encapsulate tcp client with class.
+###### 05_tcp_client: Encapsulate tcp client with c++ class.
+
+###### 05_tcp_server: Encapsulate tcp client with c++ class.
